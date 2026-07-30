@@ -4,7 +4,25 @@ This repository is the deployment-only configuration repository for the Quick De
 
 Production cloud hosts pull from this repository to deploy pre-built Docker containers published to GitHub Container Registry (GHCR).
 
-## Usage
+## Image Registry Authentication & Setup Options
+
+By default, Docker images published to GHCR (`ghcr.io`) from private repositories require authentication to pull.
+
+### Option A (RECOMMENDED): Public GHCR Packages (Zero Auth on Host)
+If the GHCR packages are set to **Public** in GitHub Package Settings (or via `gh api -X PATCH /user/packages/container/<package>/visibility -f visibility=public`), no host authentication is required. You can immediately run `docker compose pull`.
+
+### Option B: Private GHCR Packages (Host PAT Authentication)
+If the packages are kept **Private**, authenticate your production host to GHCR once before running `docker compose pull`:
+
+1. Generate a Personal Access Token (PAT) with `read:packages` scope in GitHub settings (e.g. `GHCR_READ_TOKEN`).
+   > [!NOTE]
+   > `DEPLOY_REPO_PAT` (used by GitHub Actions with `repo` write scope) is separate from `GHCR_READ_TOKEN`. While a single PAT can combine scopes, using a dedicated read-only PAT on the production host is best practice.
+2. Authenticate on the production server:
+   ```bash
+   echo "<GHCR_READ_TOKEN>" | docker login ghcr.io -u <github-username> --password-stdin
+   ```
+
+## Deployment Steps
 1. Clone this repository on your production VPS:
    ```bash
    git clone https://github.com/omarmaarouf18/saas-core-deploy.git /opt/saas-platform
@@ -14,11 +32,28 @@ Production cloud hosts pull from this repository to deploy pre-built Docker cont
    ```bash
    cp .env.example .env
    ```
-3. Generate mTLS certificates (or copy internal certs):
+3. Generate mTLS certificates:
    ```bash
-   cd certs && ./generate-certs.sh && cd ..
+   mkdir -p certs && cd certs
+   openssl genrsa -out ca.key 4096
+   openssl req -x509 -new -nodes -key ca.key -sha256 -days 3650 -out ca.crt -subj "/CN=SaaS-Platform-Prod-Root-CA"
+   SERVICES=("api-gateway" "auth-service" "chat-service" "notification-service" "user-service")
+   for service in "${SERVICES[@]}"; do
+     openssl genrsa -out "${service}.key" 2048
+     openssl req -new -key "${service}.key" -out "${service}.csr" -subj "/CN=${service}" -addext "subjectAltName = DNS:${service}, DNS:localhost, IP:127.0.0.1"
+     cat <<EOF > "${service}.ext"
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = DNS:${service}, DNS:localhost, IP:127.0.0.1
+EOF
+     openssl x509 -req -in "${service}.csr" -CA ca.crt -CAkey ca.key -CAcreateserial -out "${service}.crt" -days 3650 -sha256 -extfile "${service}.ext"
+     rm -f "${service}.csr" "${service}.ext"
+   done
+   openssl req -x509 -newkey rsa:2048 -nodes -keyout api-gateway-external.key -out api-gateway-external.crt -days 3650 -subj "/CN=localhost" -addext "subjectAltName = DNS:localhost, IP:127.0.0.1"
+   chmod 600 *.key && chmod 644 *.crt && cd ..
    ```
-4. Pull and run containers:
+4. Pull and start containers:
    ```bash
    docker compose pull && docker compose up -d
    ```
