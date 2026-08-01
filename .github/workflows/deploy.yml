@@ -44,6 +44,34 @@ jobs:
           fi
           cp .env /home/deploybot/.env 2>/dev/null || true
 
+      - name: Ensure mTLS Certificates
+        run: |
+          if [ ! -f certs/api-gateway.crt ] || [ -d certs/api-gateway.crt ]; then
+            if [ -d /home/deploybot/certs ] && [ -f /home/deploybot/certs/api-gateway.crt ]; then
+              echo "Restoring mTLS certificates from /home/deploybot/certs..."
+              rm -rf certs && mkdir -p certs
+              cp -r /home/deploybot/certs/* certs/
+            elif [ -d /opt/saas-platform/certs ] && [ -f /opt/saas-platform/certs/api-gateway.crt ] && [ -r /opt/saas-platform/certs/api-gateway.crt ]; then
+              echo "Copying mTLS certificates from /opt/saas-platform/certs..."
+              rm -rf certs && mkdir -p certs
+              cp -r /opt/saas-platform/certs/* certs/
+            else
+              echo "Generating fresh mTLS certificates..."
+              rm -rf certs && mkdir -p certs
+              cd certs
+              openssl genrsa -out ca.key 4096 2>/dev/null
+              openssl req -new -x509 -days 3650 -key ca.key -out ca.crt -subj "/CN=SaaS-Root-CA" 2>/dev/null
+              for svc in api-gateway auth-service user-service chat-service notification-service api-gateway-external; do
+                openssl genrsa -out ${svc}.key 2048 2>/dev/null
+                openssl req -new -key ${svc}.key -out ${svc}.csr -subj "/CN=${svc}" 2>/dev/null
+                openssl x509 -req -in ${svc}.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out ${svc}.crt -days 3650 2>/dev/null
+              done
+              cd ..
+            fi
+          fi
+          mkdir -p /home/deploybot/certs
+          cp -r certs/* /home/deploybot/certs/ 2>/dev/null || true
+
       - name: Validate Docker Compose Configuration
         run: |
           echo "Validating docker-compose.yml configuration..."
