@@ -12,6 +12,10 @@ jobs:
     runs-on: [self-hosted, saas-vm]
 
     steps:
+      - name: Fix Workspace File Ownership
+        run: |
+          docker run --rm -v $(pwd):/work alpine chown -R $(id -u):$(id -g) /work 2>/dev/null || true
+
       - name: Checkout Deployment Repository
         uses: actions/checkout@v4
         with:
@@ -98,6 +102,11 @@ jobs:
             echo "::error::Health check failed after $MAX_RETRIES attempts!"
             exit 1
           fi
+
+      - name: Reset File Ownership for Workspace
+        if: always()
+        run: |
+          docker run --rm -v $(pwd):/work alpine chown -R $(id -u):$(id -g) /work 2>/dev/null || true
 
       - name: Print Container Logs on Failure
         if: failure()
