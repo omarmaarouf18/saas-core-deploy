@@ -54,6 +54,13 @@ jobs:
             mkdir -p certs
           fi
 
+          # Check if existing persistent certs lack SAN extension (legacy Common Name defect)
+          if [ -f /home/deploybot/certs/auth-service.crt ] && ! openssl x509 -in /home/deploybot/certs/auth-service.crt -noout -text 2>/dev/null | grep -q "Subject Alternative Name"; then
+            echo "Persistent certs in /home/deploybot/certs lack SAN extensions — purging old certs..."
+            rm -rf /home/deploybot/certs certs
+            docker compose down --remove-orphans 2>/dev/null || true
+          fi
+
           if [ ! -f certs/ca.key ]; then
             if [ -d /home/deploybot/certs ] && [ -f /home/deploybot/certs/ca.key ]; then
               echo "Restoring mTLS certificates from /home/deploybot/certs..."
