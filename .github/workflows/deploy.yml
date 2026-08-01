@@ -69,8 +69,8 @@ jobs:
               openssl req -new -x509 -days 3650 -key ca.key -out ca.crt -subj "/CN=SaaS-Root-CA" 2>/dev/null
               for svc in api-gateway auth-service user-service chat-service notification-service api-gateway-external; do
                 openssl genrsa -out ${svc}.key 2048 2>/dev/null
-                openssl req -new -key ${svc}.key -out ${svc}.csr -subj "/CN=${svc}" 2>/dev/null
-                openssl x509 -req -in ${svc}.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out ${svc}.crt -days 3650 2>/dev/null
+                openssl req -new -key ${svc}.key -out ${svc}.csr -subj "/CN=${svc}" -addext "subjectAltName = DNS:${svc}, DNS:localhost, IP:127.0.0.1" 2>/dev/null
+                openssl x509 -req -in ${svc}.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out ${svc}.crt -days 3650 -copy_extensions copy 2>/dev/null
               done
               cd ..
             fi
