@@ -4,6 +4,33 @@ This repository is the deployment-only configuration repository for the Quick De
 
 Production cloud hosts pull from this repository to deploy pre-built Docker containers published to GitHub Container Registry (GHCR).
 
+## Automated Continuous Deployment (Current Setup)
+
+This repository has an automated CD pipeline (`.github/workflows/deploy.yml`) that runs
+on a self-hosted GitHub Actions runner installed directly on the production VM
+(`quickdelivery-vm`, runner name `saas-vm-runner`). On every push to `main` (typically
+triggered by `saas-core`'s build-and-publish pipeline updating this repo's
+docker-compose.yml with new image tags), the runner automatically:
+1. Checks out the latest docker-compose.yml
+2. Ensures a `.env` file exists (copying from `/opt/saas-platform/.env` if missing)
+3. Validates the compose configuration
+4. Pulls the new container images
+5. Runs `docker compose up -d --remove-orphans`
+6. Dumps container logs automatically on any failure for fast diagnosis
+
+Manual deployment (below) is still useful for first-time server setup or disaster
+recovery, but routine releases no longer require any manual SSH step.
+
+**Important: volume naming is pinned.** The `mongo_data` and `redis_data` volumes are
+explicitly named `saas_platform_mongo_data` / `saas_platform_redis_data` in
+docker-compose.yml (rather than left to Docker Compose's default directory-based naming).
+This was fixed after a real incident where the CD pipeline running from a different
+working directory than the original manual setup created a *second*, empty MongoDB
+volume — causing `docker compose up` to authenticate against the wrong (empty) volume
+and fail with `AuthenticationFailed: SCRAM authentication failed, storedKey mismatch`.
+If you ever change where this repo is checked out from, the pinned names guarantee the
+same physical volume is reused rather than a new one being silently created.
+
 ## Image Registry Authentication & Setup Options
 
 By default, Docker images published to GHCR (`ghcr.io`) from private repositories require authentication to pull.
