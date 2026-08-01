@@ -69,7 +69,7 @@ jobs:
       - name: Inspect MongoDB Startup Logs
         run: |
           echo "=== MONGODB STARTUP LOGS ==="
-          docker compose logs saas-mongo --tail=30
+          docker compose logs mongo --tail=30
 
       - name: Verify Service Health
         run: |
