@@ -46,19 +46,19 @@ jobs:
 
       - name: Ensure Real mTLS Certificate Files
         run: |
-          # If certs/ contains directories created by Docker mounts instead of regular files, purge them
-          if [ -d certs/api-gateway.crt ] || [ -d certs/chat-service.crt ] || [ ! -f certs/ca.crt ]; then
-            echo "Found invalid directory mounts or missing certs — wiping certs directory..."
-            docker compose down 2>/dev/null || true
+          INVALID_MOUNTS=$(find certs/ -maxdepth 1 -type d ! -path certs/ 2>/dev/null | wc -l)
+          if [ "$INVALID_MOUNTS" -gt 0 ] || [ ! -f certs/ca.key ] || [ ! -f certs/api-gateway.key ]; then
+            echo "Found invalid directory mounts or missing cert keys (invalid count: $INVALID_MOUNTS) — stopping containers and purging certs..."
+            docker compose down --remove-orphans 2>/dev/null || true
             rm -rf certs
             mkdir -p certs
           fi
 
-          if [ ! -f certs/ca.crt ]; then
-            if [ -d /home/deploybot/certs ] && [ -f /home/deploybot/certs/ca.crt ]; then
+          if [ ! -f certs/ca.key ]; then
+            if [ -d /home/deploybot/certs ] && [ -f /home/deploybot/certs/ca.key ]; then
               echo "Restoring mTLS certificates from /home/deploybot/certs..."
               cp -r /home/deploybot/certs/* certs/
-            elif [ -d /opt/saas-platform/certs ] && [ -f /opt/saas-platform/certs/ca.crt ] && [ -r /opt/saas-platform/certs/ca.crt ]; then
+            elif [ -d /opt/saas-platform/certs ] && [ -f /opt/saas-platform/certs/ca.key ] && [ -r /opt/saas-platform/certs/ca.key ]; then
               echo "Copying mTLS certificates from /opt/saas-platform/certs..."
               cp -r /opt/saas-platform/certs/* certs/
             else
