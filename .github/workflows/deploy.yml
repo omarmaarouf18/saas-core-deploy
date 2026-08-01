@@ -13,18 +13,24 @@ jobs:
     steps:
       - name: Checkout Deployment Repository
         uses: actions/checkout@v4
+        with:
+          clean: false
 
       - name: Ensure Production Environment File
         run: |
           if [ ! -f .env ]; then
-            if [ -f /opt/saas-platform/.env ]; then
+            if [ -f /home/deploybot/.env ]; then
+              echo "Copying production environment config from /home/deploybot/.env..."
+              cp /home/deploybot/.env .env
+            elif [ -f /opt/saas-platform/.env ]; then
               echo "Copying production environment config from /opt/saas-platform/.env..."
               cp /opt/saas-platform/.env .env
             else
-              echo "Warning: /opt/saas-platform/.env not found, using .env.example..."
+              echo "Warning: No production .env found, copying .env.example..."
               cp .env.example .env
             fi
           fi
+          cp .env /home/deploybot/.env 2>/dev/null || true
 
       - name: Validate Docker Compose Configuration
         run: |
