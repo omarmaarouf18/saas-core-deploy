@@ -26,6 +26,15 @@ jobs:
             fi
           fi
 
+      - name: Clean Up Legacy Fragmented Volumes
+        run: |
+          echo "=== CLEANING UP LEGACY FRAGMENTED VOLUMES ==="
+          docker compose down --volumes --remove-orphans || true
+          docker volume rm saas-platform_mongo_data saas-core-deploy_mongo_data infrastructure_mongo_data 2>/dev/null || true
+          docker volume rm saas-platform_redis_data saas-core-deploy_redis_data infrastructure_redis_data 2>/dev/null || true
+          echo "=== REMAINING MONGO VOLUMES ==="
+          docker volume ls | grep -i mongo || echo "Zero old mongo volumes remain."
+
       - name: Validate Docker Compose Configuration
         run: |
           echo "Validating docker-compose.yml configuration..."
@@ -41,10 +50,17 @@ jobs:
           echo "Pulling updated production container images..."
           docker compose pull
 
-      - name: Deploy Container Services
+      - name: Deploy Container Services with Pinned Volume Names
         run: |
           echo "Deploying updated services..."
           docker compose up -d --remove-orphans
+          echo "=== DOCKER COMPOSE CONTAINER STATUS ==="
+          docker compose ps
+
+      - name: Inspect MongoDB Startup Logs
+        run: |
+          echo "=== MONGODB STARTUP LOGS ==="
+          docker compose logs saas-mongo --tail=30
 
       - name: Verify Service Health
         run: |
