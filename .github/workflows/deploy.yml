@@ -6,8 +6,8 @@ on:
       - main
 
 jobs:
-  diagnose:
-    name: MongoDB Diagnostic Check
+  deploy:
+    name: Deploy to Production VM
     runs-on: [self-hosted, saas-vm]
 
     steps:
@@ -18,53 +18,73 @@ jobs:
         run: |
           if [ ! -f .env ]; then
             if [ -f /opt/saas-platform/.env ]; then
+              echo "Copying production environment config from /opt/saas-platform/.env..."
               cp /opt/saas-platform/.env .env
             else
+              echo "Warning: /opt/saas-platform/.env not found, using .env.example..."
               cp .env.example .env
             fi
           fi
 
-      - name: Step 1 - Confirm Exact Volume Name
+      - name: Validate Docker Compose Configuration
         run: |
-          echo "=== STEP 1: DOCKER VOLUME LIST ==="
-          pwd
-          docker volume ls | grep mongo
+          echo "Validating docker-compose.yml configuration..."
+          docker compose config --quiet || {
+            echo "::error::docker-compose.yml validation failed!"
+            docker compose config
+            exit 1
+          }
+          echo "docker-compose.yml configuration is valid."
 
-      - name: Step 2 - Test Current .env Password
+      - name: Pull Production Container Images
         run: |
-          echo "=== STEP 2: TEST CURRENT ENV PASSWORD ==="
-          source .env
-          docker exec saas-mongo mongosh -u root -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --eval "db.adminCommand('ping')" || true
+          echo "Pulling updated production container images..."
+          docker compose pull
 
-      - name: Step 3 - Test Unauthenticated Connection
+      - name: Deploy Container Services
         run: |
-          echo "=== STEP 3: UNAUTHENTICATED MONGO CONNECTION ==="
-          docker exec saas-mongo mongosh --eval "db.adminCommand('ping')" 2>&1 | head -5 || true
+          echo "Deploying updated services..."
+          docker compose up -d --remove-orphans
 
-      - name: Step 4 - Search for Original Password Traces
+      - name: Verify Service Health
         run: |
-          echo "=== STEP 4: SEARCH FOR ENV BACKUPS AND HISTORY ==="
-          echo "--- find *.env* ---"
-          find / -maxdepth 5 -iname "*.env*" 2>/dev/null || true
-          echo "--- find *.bak / .old / .orig ---"
-          find / -maxdepth 5 -iname "*.env*.bak" -o -iname ".env.old" -o -iname ".env.orig" 2>/dev/null || true
-          echo "--- history grep mongo ---"
-          history | grep -i -E "mongo|openssl rand|MONGO_INITDB" || true
-          echo "--- bash_history ---"
-          cat ~/.bash_history 2>/dev/null | grep -i mongo || true
+          echo "Verifying API Gateway health status..."
+          MAX_RETRIES=5
+          RETRY_DELAY=5
+          SUCCESS=0
 
-      - name: Step 5 - Container vs File Timestamps
-        run: |
-          echo "=== STEP 5: CONTAINER VS ENV TIMESTAMPS ==="
-          echo "Container Created:"
-          docker inspect saas-mongo --format '{{.Created}}' || true
-          echo ".env Modified:"
-          stat -c '%y' .env || true
-          echo "/opt/saas-platform/.env Modified:"
-          stat -c '%y' /opt/saas-platform/.env 2>/dev/null || true
+          for i in $(seq 1 $MAX_RETRIES); do
+            echo "Health check attempt $i of $MAX_RETRIES..."
+            HTTP_STATUS=$(curl -s -k -o /dev/null -w "%{http_code}" "http://localhost:8080/health" || echo "000")
+            if [ "$HTTP_STATUS" != "200" ]; then
+              HTTP_STATUS=$(curl -s -k -o /dev/null -w "%{http_code}" "https://localhost:8080/health" || echo "000")
+            fi
 
-      - name: Step 6 - List All Mongo Volumes and Mountpoints
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "Health check succeeded with HTTP 200!"
+              SUCCESS=1
+              break
+            else
+              echo "Health check attempt $i returned HTTP status $HTTP_STATUS."
+              if [ $i -lt $MAX_RETRIES ]; then
+                echo "Waiting $RETRY_DELAY seconds before retrying..."
+                sleep $RETRY_DELAY
+              fi
+            fi
+          done
+
+          if [ $SUCCESS -ne 1 ]; then
+            echo "::error::Health check failed after $MAX_RETRIES attempts!"
+            exit 1
+          fi
+
+      - name: Print Container Logs on Failure
+        if: failure()
         run: |
-          echo "=== STEP 6: ALL MONGO VOLUMES AND MOUNTPOINTS ==="
-          docker volume ls | grep -i mongo || true
-          for v in $(docker volume ls -q | grep -i mongo); do echo "--- $v ---"; docker volume inspect "$v" --format '{{.Mountpoint}}'; done
+          echo "================================================================="
+          echo "DEPLOYMENT FAILURE LOG DUMP (Last 50 lines per container)"
+          echo "================================================================="
+          docker compose ps
+          echo "-----------------------------------------------------------------"
+          docker compose logs --tail=50
+          echo "================================================================="
