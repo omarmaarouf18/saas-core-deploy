@@ -26,15 +26,6 @@ jobs:
             fi
           fi
 
-      - name: Clean Up Legacy Fragmented Volumes
-        run: |
-          echo "=== CLEANING UP LEGACY FRAGMENTED VOLUMES ==="
-          docker compose down --volumes --remove-orphans || true
-          docker volume rm saas-platform_mongo_data saas-core-deploy_mongo_data infrastructure_mongo_data 2>/dev/null || true
-          docker volume rm saas-platform_redis_data saas-core-deploy_redis_data infrastructure_redis_data 2>/dev/null || true
-          echo "=== REMAINING MONGO VOLUMES ==="
-          docker volume ls | grep -i mongo || echo "Zero old mongo volumes remain."
-
       - name: Validate Docker Compose Configuration
         run: |
           echo "Validating docker-compose.yml configuration..."
@@ -65,7 +56,7 @@ jobs:
       - name: Verify Service Health
         run: |
           echo "Verifying API Gateway health status..."
-          MAX_RETRIES=5
+          MAX_RETRIES=12
           RETRY_DELAY=5
           SUCCESS=0
 
