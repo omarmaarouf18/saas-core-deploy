@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -19,15 +20,19 @@ jobs:
       - name: Ensure Production Environment File
         run: |
           if [ ! -f .env ]; then
-            if [ -f /home/deploybot/.env ]; then
-              echo "Copying production environment config from /home/deploybot/.env..."
-              cp /home/deploybot/.env .env
-            elif [ -f /opt/saas-platform/.env ]; then
-              echo "Copying production environment config from /opt/saas-platform/.env..."
-              cp /opt/saas-platform/.env .env
+            ENV_SOURCE=$(find /home/deploybot /opt/saas-platform /tmp -name ".env" -type f 2>/dev/null | head -n 1)
+            if [ -n "$ENV_SOURCE" ]; then
+              echo "Copying existing production environment file from $ENV_SOURCE..."
+              cp "$ENV_SOURCE" .env
             else
-              echo "Warning: No production .env found, copying .env.example..."
+              echo "Warning: Creating default .env from .env.example..."
               cp .env.example .env
+              sed -i 's/MONGO_INITDB_ROOT_PASSWORD=.*/MONGO_INITDB_ROOT_PASSWORD=change_me_mongo_secret/g' .env
+              sed -i 's/REDIS_PASSWORD=.*/REDIS_PASSWORD=change_me_redis_secret/g' .env
+              sed -i 's/JWT_SECRET=.*/JWT_SECRET=change_me_jwt_secret/g' .env
+              sed -i 's/GATEWAY_SECRET=.*/GATEWAY_SECRET=change_me_gateway_secret/g' .env
+              sed -i 's/INTERNAL_SERVICE_TOKEN=.*/INTERNAL_SERVICE_TOKEN=change_me_internal_token/g' .env
+              sed -i 's/OTP_AES_KEY=.*/OTP_AES_KEY=000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f/g' .env
             fi
           fi
           cp .env /home/deploybot/.env 2>/dev/null || true
