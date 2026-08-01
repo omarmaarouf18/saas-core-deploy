@@ -1,0 +1,90 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Production VM
+    runs-on: [self-hosted, saas-vm]
+
+    steps:
+      - name: Checkout Deployment Repository
+        uses: actions/checkout@v4
+
+      - name: Ensure Production Environment File
+        run: |
+          if [ ! -f .env ]; then
+            if [ -f /opt/saas-platform/.env ]; then
+              echo "Copying production environment config from /opt/saas-platform/.env..."
+              cp /opt/saas-platform/.env .env
+            else
+              echo "Warning: /opt/saas-platform/.env not found, using .env.example..."
+              cp .env.example .env
+            fi
+          fi
+
+      - name: Validate Docker Compose Configuration
+        run: |
+          echo "Validating docker-compose.yml configuration..."
+          docker compose config --quiet || {
+            echo "::error::docker-compose.yml validation failed!"
+            docker compose config
+            exit 1
+          }
+          echo "docker-compose.yml configuration is valid."
+
+      - name: Pull Production Container Images
+        run: |
+          echo "Pulling updated production container images..."
+          docker compose pull
+
+      - name: Deploy Container Services
+        run: |
+          echo "Deploying updated services..."
+          docker compose up -d --remove-orphans
+
+      - name: Verify Service Health
+        run: |
+          echo "Verifying API Gateway health status..."
+          MAX_RETRIES=5
+          RETRY_DELAY=5
+          SUCCESS=0
+
+          for i in $(seq 1 $MAX_RETRIES); do
+            echo "Health check attempt $i of $MAX_RETRIES..."
+            HTTP_STATUS=$(curl -s -k -o /dev/null -w "%{http_code}" "http://localhost:8080/health" || echo "000")
+            if [ "$HTTP_STATUS" != "200" ]; then
+              HTTP_STATUS=$(curl -s -k -o /dev/null -w "%{http_code}" "https://localhost:8080/health" || echo "000")
+            fi
+
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "Health check succeeded with HTTP 200!"
+              SUCCESS=1
+              break
+            else
+              echo "Health check attempt $i returned HTTP status $HTTP_STATUS."
+              if [ $i -lt $MAX_RETRIES ]; then
+                echo "Waiting $RETRY_DELAY seconds before retrying..."
+                sleep $RETRY_DELAY
+              fi
+            fi
+          done
+
+          if [ $SUCCESS -ne 1 ]; then
+            echo "::error::Health check failed after $MAX_RETRIES attempts!"
+            exit 1
+          fi
+
+      - name: Print Container Logs on Failure
+        if: failure()
+        run: |
+          echo "================================================================="
+          echo "DEPLOYMENT FAILURE LOG DUMP (Last 50 lines per container)"
+          echo "================================================================="
+          docker compose ps
+          echo "-----------------------------------------------------------------"
+          docker compose logs --tail=50
+          echo "================================================================="
