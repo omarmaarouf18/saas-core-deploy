@@ -1,7 +1,11 @@
 # =============================================================================
 # SaaS Platform — Production Deployment Docker Compose Orchestration
 # =============================================================================
-# Usage:
+# THIS IS A REFERENCE COPY maintained in saas-core. The update-deployment-repo
+# job in build-and-publish.yml copies this file to saas-core-deploy with
+# 31f74662fdf14277e72550b8d7807011a3a9f87c substituted for the actual commit SHA.
+#
+# Usage (on production VM, via deploy.yml):
 #   docker compose --env-file .env up -d
 #   docker compose --env-file .env down
 # =============================================================================
@@ -55,7 +59,7 @@ services:
   # Production Microservices (Images from GHCR)
   # ---------------------------------------------------------------------------
   api-gateway:
-    image: ghcr.io/omarmaarouf18/saas-core-api-gateway:5064123840f9ff08864396cf3168331334783f72
+    image: ghcr.io/omarmaarouf18/saas-core-api-gateway:31f74662fdf14277e72550b8d7807011a3a9f87c
     container_name: saas-api-gateway
     restart: unless-stopped
     ports:
@@ -84,6 +88,7 @@ services:
       EXTERNAL_TLS_CERT_PATH: /app/certs/api-gateway-external.crt
       EXTERNAL_TLS_KEY_PATH: /app/certs/api-gateway-external.key
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-127.0.0.1,::1,172.16.0.0/12,10.0.0.0/8}
     depends_on:
       mongo:
         condition: service_healthy
@@ -93,7 +98,7 @@ services:
       - saas-net
 
   chat-service:
-    image: ghcr.io/omarmaarouf18/saas-core-chat-service:5064123840f9ff08864396cf3168331334783f72
+    image: ghcr.io/omarmaarouf18/saas-core-chat-service:31f74662fdf14277e72550b8d7807011a3a9f87c
     container_name: saas-chat-service
     restart: unless-stopped
     expose:
@@ -105,6 +110,7 @@ services:
     environment:
       PORT: ${CHAT_SERVICE_PORT}
       MONGO_URI: ${MONGO_URI}
+      CHAT_MONGO_DATABASE: ${CHAT_MONGO_DATABASE:-chat_db}
       MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
       REDIS_URI: ${REDIS_URI}
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
@@ -127,7 +133,7 @@ services:
       - saas-net
 
   auth-service:
-    image: ghcr.io/omarmaarouf18/saas-core-auth-service:5064123840f9ff08864396cf3168331334783f72
+    image: ghcr.io/omarmaarouf18/saas-core-auth-service:31f74662fdf14277e72550b8d7807011a3a9f87c
     container_name: saas-auth-service
     restart: unless-stopped
     expose:
@@ -139,11 +145,13 @@ services:
     environment:
       PORT: ${AUTH_SERVICE_PORT}
       MONGO_URI: ${MONGO_URI}
+      AUTH_MONGO_DATABASE: ${AUTH_MONGO_DATABASE:-auth_db}
       MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
       REDIS_URI: ${REDIS_URI}
       APP_ENV: ${APP_ENV}
       LOG_LEVEL: ${LOG_LEVEL}
       JWT_SECRET: ${JWT_SECRET}
+      DOCUMENT_SIGNING_SECRET: ${DOCUMENT_SIGNING_SECRET}
       GATEWAY_SECRET: ${GATEWAY_SECRET}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
       OTP_AES_KEY: ${OTP_AES_KEY}
@@ -164,7 +172,7 @@ services:
       - saas-net
 
   user-service:
-    image: ghcr.io/omarmaarouf18/saas-core-user-service:5064123840f9ff08864396cf3168331334783f72
+    image: ghcr.io/omarmaarouf18/saas-core-user-service:31f74662fdf14277e72550b8d7807011a3a9f87c
     container_name: saas-user-service
     restart: unless-stopped
     expose:
@@ -176,6 +184,7 @@ services:
     environment:
       PORT: ${USER_SERVICE_PORT}
       MONGO_URI: ${MONGO_URI}
+      USER_MONGO_DATABASE: ${USER_MONGO_DATABASE:-user_db}
       MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
       REDIS_URI: ${REDIS_URI}
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
@@ -198,7 +207,7 @@ services:
       - saas-net
 
   notification-service:
-    image: ghcr.io/omarmaarouf18/saas-core-notification-service:5064123840f9ff08864396cf3168331334783f72
+    image: ghcr.io/omarmaarouf18/saas-core-notification-service:31f74662fdf14277e72550b8d7807011a3a9f87c
     container_name: saas-notification-service
     restart: unless-stopped
     expose:
