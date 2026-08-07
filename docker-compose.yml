@@ -3,7 +3,7 @@
 # =============================================================================
 # THIS IS A REFERENCE COPY maintained in saas-core. The update-deployment-repo
 # job in build-and-publish.yml copies this file to saas-core-deploy with
-# 838fc59d93bfbab446355f46064c55c1636e8a91 substituted for the actual commit SHA.
+# 7a41b95af7f602cb333bc480ca5b275b2482ebe5 substituted for the actual commit SHA.
 #
 # Usage (on production VM, via deploy.yml):
 #   docker compose --env-file .env up -d
@@ -59,7 +59,7 @@ services:
   # Production Microservices (Images from GHCR)
   # ---------------------------------------------------------------------------
   api-gateway:
-    image: ghcr.io/omarmaarouf18/saas-core-api-gateway:838fc59d93bfbab446355f46064c55c1636e8a91
+    image: ghcr.io/omarmaarouf18/saas-core-api-gateway:7a41b95af7f602cb333bc480ca5b275b2482ebe5
     container_name: saas-api-gateway
     restart: unless-stopped
     ports:
@@ -98,7 +98,7 @@ services:
       - saas-net
 
   chat-service:
-    image: ghcr.io/omarmaarouf18/saas-core-chat-service:838fc59d93bfbab446355f46064c55c1636e8a91
+    image: ghcr.io/omarmaarouf18/saas-core-chat-service:7a41b95af7f602cb333bc480ca5b275b2482ebe5
     container_name: saas-chat-service
     restart: unless-stopped
     expose:
@@ -133,7 +133,7 @@ services:
       - saas-net
 
   auth-service:
-    image: ghcr.io/omarmaarouf18/saas-core-auth-service:838fc59d93bfbab446355f46064c55c1636e8a91
+    image: ghcr.io/omarmaarouf18/saas-core-auth-service:7a41b95af7f602cb333bc480ca5b275b2482ebe5
     container_name: saas-auth-service
     restart: unless-stopped
     expose:
@@ -172,7 +172,7 @@ services:
       - saas-net
 
   user-service:
-    image: ghcr.io/omarmaarouf18/saas-core-user-service:838fc59d93bfbab446355f46064c55c1636e8a91
+    image: ghcr.io/omarmaarouf18/saas-core-user-service:7a41b95af7f602cb333bc480ca5b275b2482ebe5
     container_name: saas-user-service
     restart: unless-stopped
     expose:
@@ -207,7 +207,7 @@ services:
       - saas-net
 
   notification-service:
-    image: ghcr.io/omarmaarouf18/saas-core-notification-service:838fc59d93bfbab446355f46064c55c1636e8a91
+    image: ghcr.io/omarmaarouf18/saas-core-notification-service:7a41b95af7f602cb333bc480ca5b275b2482ebe5
     container_name: saas-notification-service
     restart: unless-stopped
     expose:
