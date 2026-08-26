@@ -3,7 +3,7 @@
 # =============================================================================
 # THIS IS A REFERENCE COPY maintained in saas-core. The update-deployment-repo
 # job in build-and-publish.yml copies this file to saas-core-deploy with
-# cc18afe788abe97b2eb84453f9a7bd64da1b3fc1 substituted for the actual commit SHA.
+# IMAGE_TAG substituted for the actual commit SHA.
 #
 # Usage (on production VM, via deploy.yml):
 #   docker compose --env-file .env up -d
@@ -59,7 +59,7 @@ services:
   # Production Microservices (Images from GHCR)
   # ---------------------------------------------------------------------------
   api-gateway:
-    image: ghcr.io/omarmaarouf18/saas-core-api-gateway:cc18afe788abe97b2eb84453f9a7bd64da1b3fc1
+    image: ghcr.io/omarmaarouf18/saas-core-api-gateway:8ee85c4719a750f44512442cb7625f86db4091b6
     container_name: saas-api-gateway
     restart: unless-stopped
     ports:
@@ -98,7 +98,7 @@ services:
       - saas-net
 
   chat-service:
-    image: ghcr.io/omarmaarouf18/saas-core-chat-service:cc18afe788abe97b2eb84453f9a7bd64da1b3fc1
+    image: ghcr.io/omarmaarouf18/saas-core-chat-service:8ee85c4719a750f44512442cb7625f86db4091b6
     container_name: saas-chat-service
     restart: unless-stopped
     expose:
@@ -133,7 +133,7 @@ services:
       - saas-net
 
   auth-service:
-    image: ghcr.io/omarmaarouf18/saas-core-auth-service:cc18afe788abe97b2eb84453f9a7bd64da1b3fc1
+    image: ghcr.io/omarmaarouf18/saas-core-auth-service:8ee85c4719a750f44512442cb7625f86db4091b6
     container_name: saas-auth-service
     restart: unless-stopped
     expose:
@@ -173,7 +173,7 @@ services:
       - saas-net
 
   user-service:
-    image: ghcr.io/omarmaarouf18/saas-core-user-service:cc18afe788abe97b2eb84453f9a7bd64da1b3fc1
+    image: ghcr.io/omarmaarouf18/saas-core-user-service:8ee85c4719a750f44512442cb7625f86db4091b6
     container_name: saas-user-service
     restart: unless-stopped
     expose:
@@ -208,7 +208,7 @@ services:
       - saas-net
 
   notification-service:
-    image: ghcr.io/omarmaarouf18/saas-core-notification-service:cc18afe788abe97b2eb84453f9a7bd64da1b3fc1
+    image: ghcr.io/omarmaarouf18/saas-core-notification-service:8ee85c4719a750f44512442cb7625f86db4091b6
     container_name: saas-notification-service
     restart: unless-stopped
     expose:
@@ -230,6 +230,40 @@ services:
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
       TLS_CERT_PATH: /app/certs/notification-service.crt
       TLS_KEY_PATH: /app/certs/notification-service.key
+      TLS_CA_PATH: /app/certs/ca.crt
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - saas-net
+
+  # ---------------------------------------------------------------------------
+  # KYC/KYB/KYE Reviewer Console (saas-core ADR-0021, separate repo)
+  # ---------------------------------------------------------------------------
+  # Internal-network component that holds the internal token and proxies
+  # reviewer actions to auth-service. NOT publicly bound: Caddy (host network,
+  # sibling stack) terminates kyc.<domain> and reaches it on loopback only.
+  # Image is built by omarmaarouf18/kyc-reviewer-console's own CI; pin via
+  # KYC_CONSOLE_IMAGE_TAG in .env (falls back to latest).
+  kyc-reviewer-console:
+    image: ghcr.io/omarmaarouf18/kyc-reviewer-console:${KYC_CONSOLE_IMAGE_TAG:-latest}
+    container_name: saas-kyc-reviewer-console
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8090:8090"
+    volumes:
+      - ./certs/ca.crt:/app/certs/ca.crt:ro
+      - ./certs/reviewer-console.crt:/app/certs/reviewer-console.crt:ro
+      - ./certs/reviewer-console.key:/app/certs/reviewer-console.key:ro
+    environment:
+      PORT: 8090
+      AUTH_SERVICE_URL: https://auth-service:${AUTH_SERVICE_PORT}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      APP_ENV: ${APP_ENV}
+      TLS_CERT_PATH: /app/certs/reviewer-console.crt
+      TLS_KEY_PATH: /app/certs/reviewer-console.key
       TLS_CA_PATH: /app/certs/ca.crt
     depends_on:
       mongo:
