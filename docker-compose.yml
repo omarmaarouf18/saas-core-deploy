@@ -59,7 +59,7 @@ services:
   # Production Microservices (Images from GHCR)
   # ---------------------------------------------------------------------------
   api-gateway:
-    image: ghcr.io/omarmaarouf18/saas-core-api-gateway:883b01cfb884436068c54b1558458bed387d25ad
+    image: ghcr.io/omarmaarouf18/saas-core-api-gateway:537e98f61dda9bc73136afa551f100059ddf72a8
     container_name: saas-api-gateway
     restart: unless-stopped
     ports:
@@ -98,7 +98,7 @@ services:
       - saas-net
 
   chat-service:
-    image: ghcr.io/omarmaarouf18/saas-core-chat-service:883b01cfb884436068c54b1558458bed387d25ad
+    image: ghcr.io/omarmaarouf18/saas-core-chat-service:537e98f61dda9bc73136afa551f100059ddf72a8
     container_name: saas-chat-service
     restart: unless-stopped
     expose:
@@ -133,7 +133,7 @@ services:
       - saas-net
 
   auth-service:
-    image: ghcr.io/omarmaarouf18/saas-core-auth-service:883b01cfb884436068c54b1558458bed387d25ad
+    image: ghcr.io/omarmaarouf18/saas-core-auth-service:537e98f61dda9bc73136afa551f100059ddf72a8
     container_name: saas-auth-service
     restart: unless-stopped
     expose:
@@ -173,7 +173,7 @@ services:
       - saas-net
 
   user-service:
-    image: ghcr.io/omarmaarouf18/saas-core-user-service:883b01cfb884436068c54b1558458bed387d25ad
+    image: ghcr.io/omarmaarouf18/saas-core-user-service:537e98f61dda9bc73136afa551f100059ddf72a8
     container_name: saas-user-service
     restart: unless-stopped
     expose:
@@ -208,7 +208,7 @@ services:
       - saas-net
 
   notification-service:
-    image: ghcr.io/omarmaarouf18/saas-core-notification-service:883b01cfb884436068c54b1558458bed387d25ad
+    image: ghcr.io/omarmaarouf18/saas-core-notification-service:537e98f61dda9bc73136afa551f100059ddf72a8
     container_name: saas-notification-service
     restart: unless-stopped
     expose:
