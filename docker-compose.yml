@@ -59,7 +59,7 @@ services:
   # Production Microservices (Images from GHCR)
   # ---------------------------------------------------------------------------
   api-gateway:
-    image: ghcr.io/omarmaarouf18/saas-core-api-gateway:2951eba418e9b58bbf076c77f2e97be3cb01db89
+    image: ghcr.io/omarmaarouf18/saas-core-api-gateway:bd23827b2de44c4340991ccf8e411d0b1b55995e
     container_name: saas-api-gateway
     restart: unless-stopped
     ports:
@@ -98,7 +98,7 @@ services:
       - saas-net
 
   chat-service:
-    image: ghcr.io/omarmaarouf18/saas-core-chat-service:2951eba418e9b58bbf076c77f2e97be3cb01db89
+    image: ghcr.io/omarmaarouf18/saas-core-chat-service:bd23827b2de44c4340991ccf8e411d0b1b55995e
     container_name: saas-chat-service
     restart: unless-stopped
     expose:
@@ -133,7 +133,7 @@ services:
       - saas-net
 
   auth-service:
-    image: ghcr.io/omarmaarouf18/saas-core-auth-service:2951eba418e9b58bbf076c77f2e97be3cb01db89
+    image: ghcr.io/omarmaarouf18/saas-core-auth-service:bd23827b2de44c4340991ccf8e411d0b1b55995e
     container_name: saas-auth-service
     restart: unless-stopped
     expose:
@@ -173,7 +173,7 @@ services:
       - saas-net
 
   user-service:
-    image: ghcr.io/omarmaarouf18/saas-core-user-service:2951eba418e9b58bbf076c77f2e97be3cb01db89
+    image: ghcr.io/omarmaarouf18/saas-core-user-service:bd23827b2de44c4340991ccf8e411d0b1b55995e
     container_name: saas-user-service
     restart: unless-stopped
     expose:
@@ -208,7 +208,7 @@ services:
       - saas-net
 
   notification-service:
-    image: ghcr.io/omarmaarouf18/saas-core-notification-service:2951eba418e9b58bbf076c77f2e97be3cb01db89
+    image: ghcr.io/omarmaarouf18/saas-core-notification-service:bd23827b2de44c4340991ccf8e411d0b1b55995e
     container_name: saas-notification-service
     restart: unless-stopped
     expose:
@@ -220,6 +220,7 @@ services:
     environment:
       PORT: ${NOTIFICATION_SERVICE_PORT}
       MONGO_URI: ${MONGO_URI}
+      NOTIFICATION_MONGO_DATABASE: ${NOTIFICATION_MONGO_DATABASE:-notification_db}
       MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
       REDIS_URI: ${REDIS_URI}
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
