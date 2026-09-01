@@ -1,7 +1,11 @@
-api.yourdomain.com {
+api.logiclinkeg.tech {
     reverse_proxy https://127.0.0.1:8080 {
         transport http {
             tls_insecure_skip_verify
         }
     }
+}
+
+kyc.logiclinkeg.tech {
+    reverse_proxy http://127.0.0.1:8090
 }
