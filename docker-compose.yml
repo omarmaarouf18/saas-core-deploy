@@ -99,7 +99,7 @@ services:
   # Production Microservices (Images from GHCR)
   # ---------------------------------------------------------------------------
   api-gateway:
-    image: ghcr.io/omarmaarouf18/saas-core-api-gateway:75367b57e7016d87c90bd0b528a11a55af9c12d7
+    image: ghcr.io/omarmaarouf18/saas-core-api-gateway:ed5f2ba1328bbf9f341647b5efba22b65cdf000f
     container_name: saas-api-gateway
     logging: *default-logging
     mem_limit: 32m
@@ -147,7 +147,7 @@ services:
       - saas-net
 
   chat-service:
-    image: ghcr.io/omarmaarouf18/saas-core-chat-service:75367b57e7016d87c90bd0b528a11a55af9c12d7
+    image: ghcr.io/omarmaarouf18/saas-core-chat-service:ed5f2ba1328bbf9f341647b5efba22b65cdf000f
     container_name: saas-chat-service
     logging: *default-logging
     mem_limit: 56m
@@ -191,7 +191,7 @@ services:
       - saas-net
 
   auth-service:
-    image: ghcr.io/omarmaarouf18/saas-core-auth-service:75367b57e7016d87c90bd0b528a11a55af9c12d7
+    image: ghcr.io/omarmaarouf18/saas-core-auth-service:ed5f2ba1328bbf9f341647b5efba22b65cdf000f
     container_name: saas-auth-service
     logging: *default-logging
     mem_limit: 56m
@@ -236,7 +236,7 @@ services:
       - saas-net
 
   user-service:
-    image: ghcr.io/omarmaarouf18/saas-core-user-service:75367b57e7016d87c90bd0b528a11a55af9c12d7
+    image: ghcr.io/omarmaarouf18/saas-core-user-service:ed5f2ba1328bbf9f341647b5efba22b65cdf000f
     container_name: saas-user-service
     logging: *default-logging
     mem_limit: 48m
@@ -262,6 +262,7 @@ services:
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
       AWS_REGION: ${AWS_REGION}
       CLOUDWATCH_LOG_GROUP: ${CLOUDWATCH_LOG_GROUP}
+      DIGITAL_PAYMENTS_ENABLED: ${DIGITAL_PAYMENTS_ENABLED:-false}
       TLS_CERT_PATH: /app/certs/user-service.crt
       TLS_KEY_PATH: /app/certs/user-service.key
       TLS_CA_PATH: /app/certs/ca.crt
@@ -274,7 +275,7 @@ services:
       - saas-net
 
   notification-service:
-    image: ghcr.io/omarmaarouf18/saas-core-notification-service:75367b57e7016d87c90bd0b528a11a55af9c12d7
+    image: ghcr.io/omarmaarouf18/saas-core-notification-service:ed5f2ba1328bbf9f341647b5efba22b65cdf000f
     container_name: saas-notification-service
     logging: *default-logging
     mem_limit: 32m
