@@ -99,7 +99,7 @@ services:
   # Production Microservices (Images from GHCR)
   # ---------------------------------------------------------------------------
   api-gateway:
-    image: ghcr.io/omarmaarouf18/saas-core-api-gateway:409655540ede37c622674148bc2cec3f4fef1b0d
+    image: ghcr.io/omarmaarouf18/saas-core-api-gateway:8cdabeb693d55662bd5646009b4cc89f2c5ec98f
     container_name: saas-api-gateway
     logging: *default-logging
     mem_limit: 32m
@@ -147,7 +147,7 @@ services:
       - saas-net
 
   chat-service:
-    image: ghcr.io/omarmaarouf18/saas-core-chat-service:409655540ede37c622674148bc2cec3f4fef1b0d
+    image: ghcr.io/omarmaarouf18/saas-core-chat-service:8cdabeb693d55662bd5646009b4cc89f2c5ec98f
     container_name: saas-chat-service
     logging: *default-logging
     mem_limit: 56m
@@ -191,7 +191,7 @@ services:
       - saas-net
 
   auth-service:
-    image: ghcr.io/omarmaarouf18/saas-core-auth-service:409655540ede37c622674148bc2cec3f4fef1b0d
+    image: ghcr.io/omarmaarouf18/saas-core-auth-service:8cdabeb693d55662bd5646009b4cc89f2c5ec98f
     container_name: saas-auth-service
     logging: *default-logging
     mem_limit: 56m
@@ -236,7 +236,7 @@ services:
       - saas-net
 
   user-service:
-    image: ghcr.io/omarmaarouf18/saas-core-user-service:409655540ede37c622674148bc2cec3f4fef1b0d
+    image: ghcr.io/omarmaarouf18/saas-core-user-service:8cdabeb693d55662bd5646009b4cc89f2c5ec98f
     container_name: saas-user-service
     logging: *default-logging
     mem_limit: 48m
@@ -275,7 +275,7 @@ services:
       - saas-net
 
   notification-service:
-    image: ghcr.io/omarmaarouf18/saas-core-notification-service:409655540ede37c622674148bc2cec3f4fef1b0d
+    image: ghcr.io/omarmaarouf18/saas-core-notification-service:8cdabeb693d55662bd5646009b4cc89f2c5ec98f
     container_name: saas-notification-service
     logging: *default-logging
     mem_limit: 32m
